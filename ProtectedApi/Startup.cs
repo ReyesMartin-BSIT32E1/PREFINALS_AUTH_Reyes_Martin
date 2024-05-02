@@ -1,47 +1,72 @@
-﻿namespace ProtectedApi
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+
+namespace ProtectedApi
 {
-    using Microsoft.AspNetCore.Authentication.JwtBearer;
-    using Microsoft.Extensions.Configuration;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.IdentityModel.Tokens;
-    using System.Text;
-
-    namespace ProtectedApi
+    public class Startup
     {
-        public class Startup
+        private readonly IConfiguration _configuration;
+
+        public Startup(IConfiguration configuration)
         {
-            private readonly IConfiguration _configuration;
+            _configuration = configuration;
+        }
 
-            public Startup(IConfiguration configuration)
+        public void ConfigureServices(IServiceCollection services)
+        {
+            // Add JWT authentication
+            services.AddAuthentication(options =>
             {
-                _configuration = configuration;
+                options.DefaultAuthenticateScheme = "JwtBearer";
+                options.DefaultChallengeScheme = "JwtBearer";
+            })
+            .AddJwtBearer("JwtBearer", jwtBearerOptions =>
+            {
+                jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"])),
+                    ValidateIssuer = true,
+                    ValidIssuer = _configuration["JwtSettings:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _configuration["JwtSettings:Audience"],
+                    ValidateLifetime = true, // Ensure token hasn't expired
+                    ClockSkew = System.TimeSpan.FromMinutes(5) // Clock skew to accommodate for server time drift
+                };
+            });
+
+            // Other service configurations...
+            services.AddControllers();
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/error");
+                app.UseHsts();
             }
 
-            public void ConfigureServices(IServiceCollection services)
-            {
-                // Add JWT authentication
-                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                    .AddJwtBearer(options =>
-                    {
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuer = true,
-                            ValidateAudience = true,
-                            ValidateLifetime = true,
-                            ValidateIssuerSigningKey = true,
-                            ValidIssuer = _configuration["JwtSettings:Issuer"],
-                            ValidAudience = _configuration["JwtSettings:Audience"],
-                            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]))
-                        };
-                    });
+            app.UseHttpsRedirection();
 
-                // Other service configurations...
-            }
+            app.UseRouting();
 
-            public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+            app.UseAuthentication(); // Enable authentication middleware
+            app.UseAuthorization(); // Enable authorization middleware
+
+            app.UseEndpoints(endpoints =>
             {
-                // Configure middleware...
-            }
+                endpoints.MapControllers();
+            });
         }
     }
 }
