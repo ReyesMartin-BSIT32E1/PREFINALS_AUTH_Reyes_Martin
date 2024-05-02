@@ -25,6 +25,14 @@ namespace ProtectedApi.Controllers
             string[] funFacts = {
                 "Fun fact 1",
                 "Fun fact 2",
+                "Fun fact 3",
+                "Fun fact 4",
+                "Fun fact 5",
+                "Fun fact 6",
+                "Fun fact 7",
+                "Fun fact 8",
+                "Fun fact 9",
+                "Fun fact 10"
                 // Add more fun facts here
             };
 
