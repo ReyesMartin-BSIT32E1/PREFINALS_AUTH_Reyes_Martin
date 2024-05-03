@@ -11,7 +11,7 @@ public class AccountController : Controller
     public AccountController(IHttpClientFactory httpClientFactory)
     {
         _httpClient = httpClientFactory.CreateClient();
-        _httpClient.BaseAddress = new System.Uri("https://your-auth-service-url.com/");
+        _httpClient.BaseAddress = new System.Uri("https://localhost:7024");
     }
 
     public IActionResult Login()
