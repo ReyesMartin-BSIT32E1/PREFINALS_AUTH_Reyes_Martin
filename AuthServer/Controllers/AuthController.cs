@@ -18,40 +18,28 @@ namespace AuthServer.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequestModel model)
+        public async Task<IActionResult> Login(string username, string password)
         {
             // Validate credentials
-            if (!await _userService.ValidateCredentialsAsync(model.Username, model.Password))
+            if (!await _userService.ValidateCredentialsAsync(username, password))
             {
                 return Unauthorized("Invalid username or password");
             }
 
             // Generate JWT token
-            var token = await _authService.GenerateJwtTokenAsync(model.Username);
+            var token = await _authService.GenerateJwtTokenAsync(username);
 
             return Ok(new { Token = token });
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestModel model)
+        public async Task<IActionResult> Register(string username, string password)
         {
-            // Implement user registration logic here
-            // Example: Create a new user with provided details
+            if (await _userService.RegisterUser(username, password))
+                return Ok();
 
-            return Ok("Registration successful");
+            return BadRequest();
         }
 
-        // Add other endpoints for user management (e.g., password change, locking) as needed
-    }
-
-    public class LoginRequestModel
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
-
-    public class RegisterRequestModel
-    {
-        // Add properties for user registration (e.g., username, password, email) as needed
     }
 }
